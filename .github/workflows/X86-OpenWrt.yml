@@ -1,11 +1,12 @@
 name: X86-OpenWrt
 
 on:
-  schedule:
-    - cron: 5 6 * * 5
-  watch:
-    types: started
-
+ # schedule:
+ #   - cron: 5 6 * * 5
+#  watch:
+#    types: started
+  workflow_dispatch:
+  
 jobs:
   build:
     runs-on: ubuntu-20.04
@@ -14,6 +15,7 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@main
+      
     - name: Show system
       run: |
         echo -e "Total CPU cores\t: $(nproc)"
@@ -24,6 +26,7 @@ jobs:
         [ -f /etc/issue.net ] && cat /etc/issue.net
         [ -f /etc/issue ] && cat /etc/issue
         ulimit -a
+        
     - name: Free disk space
       run: |
         sudo -E swapoff -a
@@ -36,6 +39,7 @@ jobs:
         sudo -E rm -rf /usr/share/dotnet /usr/local/lib/android/sdk /etc/mysql /etc/php /usr/local/share/boost
         [ -n "$AGENT_TOOLSDIRECTORY" ] && sudo rm -rf "$AGENT_TOOLSDIRECTORY"
         df -h
+        
     - name: Init build dependencies
       env:
         DEBIAN_FRONTEND: noninteractive
@@ -47,26 +51,31 @@ jobs:
         sudo -E apt-get clean -y
         git config --global user.name 'GitHub Actions' && git config --global user.email 'noreply@github.com'
         df -h
+        
     - name: Prepare Mixedwrt
       run: |
         sudo chown -R runner:runner /home/runner/work/R2S-R4S-X86-OpenWrt
         cp -r ./SCRIPTS/X86/. ./SCRIPTS/
         cp -r ./SCRIPTS/. ./
         /bin/bash 01_get_ready.sh
+        
     - name: Prepare Package
       run: |
         cd openwrt
         cp -r ../SCRIPTS/. ./
         /bin/bash 02_prepare_package.sh
         /bin/bash 02_target_only.sh
+        
     - name: Convert Translation
       run: |
         cd openwrt
         /bin/bash 03_convert_translation.sh
+        
     - name: Add ACL
       run: |
         cd openwrt
         /bin/bash 05_create_acl_for_luci.sh -a
+        
     - name: Make Config
       run: |
         cd openwrt
@@ -94,6 +103,7 @@ jobs:
         cd openwrt
         let make_process=$(nproc)+1
         make toolchain/install -j${make_process} V=s
+        
     - name: Compile Openwrt
       id: compileopenwrt
       continue-on-error: true
@@ -103,19 +113,29 @@ jobs:
         let Make_Process=$(nproc)+1
         make -j${Make_Process} V=w
         echo $?
+        
     - name: If Error
       if: steps.compileopenwrt.outcome == 'failure'
       run: |
         cat openwrt/.config
         echo '================================================================'
         cd openwrt && make -j1 V=s
+        
     - name: Cleaning
       run: |
         df -h
         cd openwrt/bin/targets/x86/64
         /bin/bash ../../../../../SCRIPTS/06_cleaning.sh
+        
     - name: Print Disk Space After
       run: df -h
+      
+    - name: Upload bin directory
+      uses: actions/upload-artifact@main
+      with:
+        name: X86-GC404-bin
+        path: openwrt/bin      
+      
     - name: Assemble Artifact
       id: assemble_artifact
       run: |
@@ -127,29 +147,9 @@ jobs:
         zip -r artifact.zip ./artifact/
         release_tag="X86-GC404-$(date +%Y-%m-%d)"
         echo "##[set-output name=release_tag;]$release_tag"
+        
     - name: Upload Artifact
       uses: actions/upload-artifact@main
       with:
         name: ${{ steps.assemble_artifact.outputs.release_tag }}-ROM
         path: ./artifact.zip
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@main
-      env:
-        GITHUB_TOKEN: ${{ secrets.workflow_token }}
-      with:
-        tag_name: ${{ steps.assemble_artifact.outputs.release_tag }}
-        release_name: 自动发布 ${{ steps.assemble_artifact.outputs.release_tag }}
-        draft: false
-        prerelease: false
-
-    - name: Upload Release Asset
-      id: upload-release-asset
-      uses: actions/upload-release-asset@main
-      env:
-        GITHUB_TOKEN: ${{ secrets.workflow_token }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-        asset_path: ./artifact.zip
-        asset_name: ${{ steps.assemble_artifact.outputs.release_tag }}-ROM.zip
-        asset_content_type: application/zip
