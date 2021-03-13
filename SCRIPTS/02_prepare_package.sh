@@ -160,8 +160,10 @@ sed -i 's,ispip.clang.cn/all_cn.txt,raw.sevencdn.com/QiuSimons/Chnroute/master/d
 svn co https://github.com/fw876/helloworld/trunk/luci-app-ssr-plus package/lean/luci-app-ssr-plus
 rm -rf ./package/lean/luci-app-ssr-plus/po/zh_Hans
 pushd package/lean
-#wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/271.patch | patch -p1
+wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/426.patch | patch -p1
 popd
+sed -i 's,8e461614154d0d395f4e704ea170a6dac67401d92fe75e57e59ee33370bf1db6,skip,g' package/lean/shadowsocks-rust/Makefile
+sed -i 's,318e0538386e52025448e7dc1e67b71bd399981e386ba0a54802ff3c13b25016,skip,g' package/lean/shadowsocks-rust/Makefile
 sed -i 's,default n,default y,g' package/lean/luci-app-ssr-plus/Makefile
 sed -i 's,Xray:xray ,Xray:xray-core ,g' package/lean/luci-app-ssr-plus/Makefile
 sed -i '/V2ray:v2ray/d' package/lean/luci-app-ssr-plus/Makefile
@@ -282,8 +284,6 @@ cp -f ../PATCH/new/script/fuck package/base-files/files/usr/bin/fuck
 cp -f ../PATCH/new/script/chinadnslist package/base-files/files/usr/bin/chinadnslist
 #最大连接
 sed -i 's/16384/65536/g' package/kernel/linux/files/sysctl-nf-conntrack.conf
-#修改启动等待（可能无效）
-sed -i 's/default "5"/default "0"/g' config/Config-images.in
 #生成默认配置及缓存
 rm -rf .config
 exit 0
