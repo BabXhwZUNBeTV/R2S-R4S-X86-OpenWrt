@@ -1,14 +1,11 @@
 #!/bin/bash
 clear
 
-#凑合解决方案
-#wget -qO - https://patch-diff.githubusercontent.com/raw/openwrt/openwrt/pull/3875.patch | patch -p1
-
-#使用O2级别的优化
+#使用O3级别的优化
 sed -i 's/Os/O3/g' include/target.mk
 #更新feed
 ./scripts/feeds update -a
-./scripts/feeds install -a -f
+./scripts/feeds install -a
 #irqbalance
 sed -i 's/0/1/g' feeds/packages/utils/irqbalance/files/irqbalance.config
 #remove annoying snapshot tag
@@ -66,7 +63,7 @@ sed -i 's,include ../..,include $(TOPDIR)/feeds/luci,g' ./package/new/luci-app-c
 cp -rf ../NoTengoBattery/package/system/compressed-memory ./package/system/compressed-memory
 #R8168
 svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/ctcgfw/r8168 package/new/r8168
-patch -p1 < ../PATCH/new/main/r8168-fix_LAN_led-for_r4s-from_TL.patch
+#patch -p1 < ../PATCH/new/main/r8168-fix_LAN_led-for_r4s-from_TL.patch
 sed -i '/r8169/d' ./target/linux/rockchip/image/armv8.mk
 #更换cryptodev-linux
 rm -rf ./package/kernel/cryptodev-linux
@@ -160,7 +157,7 @@ sed -i 's,ispip.clang.cn/all_cn.txt,raw.sevencdn.com/QiuSimons/Chnroute/master/d
 svn co https://github.com/fw876/helloworld/trunk/luci-app-ssr-plus package/lean/luci-app-ssr-plus
 rm -rf ./package/lean/luci-app-ssr-plus/po/zh_Hans
 pushd package/lean
-wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/426.patch | patch -p1
+wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/430.patch | patch -p1
 popd
 sed -i 's,8e461614154d0d395f4e704ea170a6dac67401d92fe75e57e59ee33370bf1db6,skip,g' package/lean/shadowsocks-rust/Makefile
 sed -i 's,318e0538386e52025448e7dc1e67b71bd399981e386ba0a54802ff3c13b25016,skip,g' package/lean/shadowsocks-rust/Makefile
@@ -189,6 +186,7 @@ svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/simple-obfs packa
 svn co https://github.com/coolsnowwolf/packages/trunk/net/shadowsocks-libev package/lean/shadowsocks-libev
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/trojan package/lean/trojan
 svn co https://github.com/fw876/helloworld/trunk/naiveproxy package/lean/naiveproxy
+svn co https://github.com/fw876/helloworld/trunk/shadowsocks-rust package/lean/shadowsocks-rust
 #PASSWALL
 svn co https://github.com/xiaorouji/openwrt-passwall/trunk/luci-app-passwall package/new/luci-app-passwall
 sed -i 's,default n,default y,g' package/new/luci-app-passwall/Makefile
