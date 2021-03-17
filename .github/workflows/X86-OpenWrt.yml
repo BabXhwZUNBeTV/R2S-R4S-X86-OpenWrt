@@ -128,27 +128,6 @@ jobs:
     - name: Upload bin directory
       uses: actions/upload-artifact@main
       with:
-        name: X86-GC404-bin
+        name: OpenWRT-21.02-X86-GC404-bin
         path: openwrt/bin/      
            
-    - name: Organize files
-      id: organize
-      run: |
-        rm -rf ./artifact/
-        mkdir -p ./artifact/
-        mv openwrt/bin/targets/x86/64/*squashfs-combined.img.gz ./artifact/
-        cd ./artifact/
-        ls -Ahl
-        gzip -d *.gz && exit 0
-        gzip --best *.img
-        ls -Ahl
-        sha256sum openwrt*x86* | tee X86-GC404-$(date +%Y-%m-%d)-21.02.sha256sum
-        zip X86-GC404-$(date +%Y-%m-%d)-21.02-sfs.zip *combined.img
-        ls -Ahl
-        
-    - name: Upload artifact
-      uses: actions/upload-artifact@main
-      with:
-        name: OpenWRT_21.02
-        path: ./artifact/
-
