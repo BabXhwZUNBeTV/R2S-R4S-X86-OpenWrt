@@ -1,10 +1,10 @@
 name: X86-OpenWrt
 
 on:
- # schedule:
- #   - cron: 5 6 * * 5
+  #schedule:
+  #  - cron: 5 9 * * 6
 #  watch:
-#    types: started
+ #   types: started
   workflow_dispatch:
   
 jobs:
@@ -97,6 +97,7 @@ jobs:
         df -h
         cd openwrt
         make download -j10
+        
     - name: Make Toolchain
       run: |
         df -h
@@ -121,12 +122,6 @@ jobs:
         echo '================================================================'
         cd openwrt && make -j1 V=s
         
-    - name: Cleaning
-      run: |
-        df -h
-        cd openwrt/bin/targets/x86/64
-        /bin/bash ../../../../../SCRIPTS/06_cleaning.sh
-        
     - name: Print Disk Space After
       run: df -h
       
@@ -134,22 +129,26 @@ jobs:
       uses: actions/upload-artifact@main
       with:
         name: X86-GC404-bin
-        path: openwrt/bin      
-      
-    - name: Assemble Artifact
-      id: assemble_artifact
+        path: openwrt/bin/      
+           
+    - name: Organize files
+      id: organize
       run: |
         rm -rf ./artifact/
         mkdir -p ./artifact/
-        cp openwrt/bin/targets/x86/64/*combined.img.gz ./artifact/
-        cd openwrt
-        cd ..
-        zip -r artifact.zip ./artifact/
-        release_tag="X86-GC404-$(date +%Y-%m-%d)"
-        echo "##[set-output name=release_tag;]$release_tag"
+        mv openwrt/bin/targets/x86/64/*squashfs-combined.img.gz ./artifact/
+        cd ./artifact/
+        ls -Ahl
+        gzip -d *.gz && exit 0
+        gzip --best *.img
+        ls -Ahl
+        sha256sum openwrt*x86* | tee X86-GC404-$(date +%Y-%m-%d)-21.02.sha256sum
+        zip X86-GC404-$(date +%Y-%m-%d)-21.02-sfs.zip *combined.img
+        ls -Ahl
         
-    - name: Upload Artifact
+    - name: Upload artifact
       uses: actions/upload-artifact@main
       with:
-        name: ${{ steps.assemble_artifact.outputs.release_tag }}-ROM
-        path: ./artifact.zip
+        name: OpenWRT_21.02
+        path: ./artifact/
+
